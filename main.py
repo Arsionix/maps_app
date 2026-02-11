@@ -6,7 +6,7 @@ from config import *
 
 class MapApp(arcade.Window):
     def __init__(self):
-        super().__init__(WINDOW_WIDTH, WINDOW_HEIGHT, "Maps App - Версия 1")
+        super().__init__(WINDOW_WIDTH, WINDOW_HEIGHT, "Maps App - Версия 2")
         self.lon = DEFAULT_LON
         self.lat = DEFAULT_LAT
         self.spn = DEFAULT_SPN
@@ -23,11 +23,12 @@ class MapApp(arcade.Window):
             )
 
         arcade.draw_text(f"Lon: {float(self.lon):.4f}",
-                         10, 50, arcade.color.BLACK, 14)
+                         10, 70, arcade.color.BLACK, 14)
         arcade.draw_text(f"Lat: {float(self.lat):.4f}",
-                         10, 30, arcade.color.BLACK, 14)
+                         10, 50, arcade.color.BLACK, 14)
         arcade.draw_text(f"SPN: {self.spn:.4f}", 10,
-                         10, arcade.color.BLACK, 14)
+                         30, arcade.color.BLACK, 14)
+        arcade.draw_text("PgUp/PgDown - зум", 10, 10, arcade.color.BLACK, 12)
 
     def get_image(self):
         self.spn = max(MIN_SPN, min(MAX_SPN, self.spn))
@@ -45,6 +46,16 @@ class MapApp(arcade.Window):
         with open(MAP_FILE, "wb") as f:
             f.write(response.content)
         self.background = arcade.load_texture(MAP_FILE)
+
+    def on_key_press(self, key, modifiers):
+        if key == arcade.key.PAGEUP:
+            if self.spn > MIN_SPN:
+                self.spn /= 1.5
+                self.get_image()
+        elif key == arcade.key.PAGEDOWN:
+            if self.spn < MAX_SPN:
+                self.spn *= 1.5
+                self.get_image()
 
 
 def main():
