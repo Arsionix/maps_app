@@ -161,7 +161,9 @@ class MapApp(arcade.Window):
             self.search_text += text
 
     def on_mouse_press(self, x, y, button, modifiers):
-        if 0 <= x <= 180:
+        if 0 <= x <= 180 and 570 <= y <= 600:
+            self.search_input_active = True
+        elif 0 <= x <= 180 and 540 <= y <= 600 and len(self.search_text) > 18:
             self.search_input_active = True
         else:
             self.search_input_active = False
