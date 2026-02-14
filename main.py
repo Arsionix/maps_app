@@ -6,7 +6,7 @@ from config import *
 
 class MapApp(arcade.Window):
     def __init__(self):
-        super().__init__(WINDOW_WIDTH, WINDOW_HEIGHT, "Maps App - Версия 5")
+        super().__init__(WINDOW_WIDTH, WINDOW_HEIGHT, "Maps App - Версия 7")
         self.lon = DEFAULT_LON
         self.lat = DEFAULT_LAT
         self.spn = DEFAULT_SPN
@@ -50,6 +50,10 @@ class MapApp(arcade.Window):
         else:
             arcade.draw_text(f">{self.search_text}", 5,
                              580, arcade.color.BLACK, 14)
+
+        arcade.draw_rect_filled(arcade.rect.XYWH(
+            220, 585, 80, 30), arcade.color.RED)
+        arcade.draw_text("СБРОС", 195, 580, arcade.color.WHITE, 14, bold=True)
 
     def get_image(self):
         self.spn = max(MIN_SPN, min(MAX_SPN, self.spn))
@@ -108,6 +112,11 @@ class MapApp(arcade.Window):
         except Exception as e:
             print("Ошибка поиска:", e)
 
+    def reset_search(self):
+        self.marker = None
+        self.search_text = ""
+        self.get_image()
+
     def on_key_press(self, key, modifiers):
         if key == arcade.key.PAGEUP:
             if self.spn > MIN_SPN:
@@ -165,6 +174,8 @@ class MapApp(arcade.Window):
             self.search_input_active = True
         elif 0 <= x <= 180 and 540 <= y <= 600 and len(self.search_text) > 18:
             self.search_input_active = True
+        elif 180 <= x <= 260 and 570 <= y <= 600:
+            self.reset_search()
         else:
             self.search_input_active = False
 
