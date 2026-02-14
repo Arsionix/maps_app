@@ -6,13 +6,15 @@ from config import *
 
 class MapApp(arcade.Window):
     def __init__(self):
-        super().__init__(WINDOW_WIDTH, WINDOW_HEIGHT, "Maps App - Версия 8")
+        super().__init__(WINDOW_WIDTH, WINDOW_HEIGHT, "Maps App - Версия 9")
         self.lon = DEFAULT_LON
         self.lat = DEFAULT_LAT
         self.spn = DEFAULT_SPN
         self.theme = "light"
         self.marker = None
         self.address = ""
+        self.postal_code = None
+        self.show_postal = False
         self.search_text = ""
         self.search_input_active = False
         self.background = None
@@ -57,19 +59,45 @@ class MapApp(arcade.Window):
         arcade.draw_text("СБРОС", 195, 580, arcade.color.WHITE, 14, bold=True)
 
         arcade.draw_rect_filled(arcade.rect.XYWH(
+            220, 555, 80, 30), arcade.color.DARK_GRAY)
+
+        if self.show_postal:
+            arcade.draw_text("ИНДЕКС: ON", 182, 550,
+                             arcade.color.GREEN, 11, bold=True)
+        else:
+            arcade.draw_text("ИНДЕКС: OFF", 182, 550,
+                             arcade.color.RED, 11, bold=True)
+
+        arcade.draw_rect_filled(arcade.rect.XYWH(
             135, 530, 270, 45), arcade.color.LIGHT_GRAY)
         arcade.draw_text("АДРЕС:", 5, 525, arcade.color.BLACK, 12, bold=True)
 
         if self.address:
-            if len(self.address) > 35:
-                line1 = self.address[:35]
-                line2 = self.address[35:]
+            display_address = self.get_address_text()
+
+            if len(display_address) > 35:
+                words = display_address.split()
+                line1 = ""
+                line2 = display_address
+                for word in words:
+                    if len(line1 + word) < 35:
+                        line1 += word + " "
+                    else:
+                        line2 = word + " " + \
+                            " ".join(words[words.index(word)+1:])
+                        break
                 arcade.draw_text(line1, 60, 525, arcade.color.BLACK, 10)
                 arcade.draw_text(line2, 5, 510, arcade.color.BLACK, 10)
             else:
-                arcade.draw_text(self.address, 60, 525, arcade.color.BLACK, 11)
+                arcade.draw_text(display_address, 60, 525,
+                                 arcade.color.BLACK, 11)
         else:
             arcade.draw_text("(нет объекта)", 60, 525, arcade.color.GRAY, 11)
+
+    def get_address_text(self):
+        if self.show_postal and self.postal_code:
+            return f"{self.address}, {self.postal_code}"
+        return self.address
 
     def get_image(self):
         self.spn = max(MIN_SPN, min(MAX_SPN, self.spn))
@@ -123,8 +151,13 @@ class MapApp(arcade.Window):
 
             try:
                 self.address = obj['metaDataProperty']['GeocoderMetaData']['text']
+                try:
+                    self.postal_code = obj['metaDataProperty']['GeocoderMetaData']['Address']['postal_code']
+                except:
+                    self.postal_code = None
             except:
                 self.address = "Адрес не найден"
+                self.postal_code = None
 
             self.spn = 0.01
 
@@ -137,7 +170,11 @@ class MapApp(arcade.Window):
         self.marker = None
         self.search_text = ""
         self.address = ""
+        self.postal_code = None
         self.get_image()
+
+    def toggle_postal(self):
+        self.show_postal = not self.show_postal
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.PAGEUP:
@@ -198,6 +235,8 @@ class MapApp(arcade.Window):
             self.search_input_active = True
         elif 180 <= x <= 260 and 570 <= y <= 600:
             self.reset_search()
+        elif 180 <= x <= 260 and 555 <= y <= 570:
+            self.toggle_postal()
         else:
             self.search_input_active = False
 
