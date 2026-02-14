@@ -6,12 +6,13 @@ from config import *
 
 class MapApp(arcade.Window):
     def __init__(self):
-        super().__init__(WINDOW_WIDTH, WINDOW_HEIGHT, "Maps App - Версия 7")
+        super().__init__(WINDOW_WIDTH, WINDOW_HEIGHT, "Maps App - Версия 8")
         self.lon = DEFAULT_LON
         self.lat = DEFAULT_LAT
         self.spn = DEFAULT_SPN
         self.theme = "light"
         self.marker = None
+        self.address = ""
         self.search_text = ""
         self.search_input_active = False
         self.background = None
@@ -54,6 +55,21 @@ class MapApp(arcade.Window):
         arcade.draw_rect_filled(arcade.rect.XYWH(
             220, 585, 80, 30), arcade.color.RED)
         arcade.draw_text("СБРОС", 195, 580, arcade.color.WHITE, 14, bold=True)
+
+        arcade.draw_rect_filled(arcade.rect.XYWH(
+            135, 530, 270, 45), arcade.color.LIGHT_GRAY)
+        arcade.draw_text("АДРЕС:", 5, 525, arcade.color.BLACK, 12, bold=True)
+
+        if self.address:
+            if len(self.address) > 35:
+                line1 = self.address[:35]
+                line2 = self.address[35:]
+                arcade.draw_text(line1, 60, 525, arcade.color.BLACK, 10)
+                arcade.draw_text(line2, 5, 510, arcade.color.BLACK, 10)
+            else:
+                arcade.draw_text(self.address, 60, 525, arcade.color.BLACK, 11)
+        else:
+            arcade.draw_text("(нет объекта)", 60, 525, arcade.color.GRAY, 11)
 
     def get_image(self):
         self.spn = max(MIN_SPN, min(MAX_SPN, self.spn))
@@ -105,6 +121,11 @@ class MapApp(arcade.Window):
 
             self.marker = (self.lon, self.lat)
 
+            try:
+                self.address = obj['metaDataProperty']['GeocoderMetaData']['text']
+            except:
+                self.address = "Адрес не найден"
+
             self.spn = 0.01
 
             self.get_image()
@@ -115,6 +136,7 @@ class MapApp(arcade.Window):
     def reset_search(self):
         self.marker = None
         self.search_text = ""
+        self.address = ""
         self.get_image()
 
     def on_key_press(self, key, modifiers):
