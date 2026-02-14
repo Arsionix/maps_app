@@ -6,11 +6,14 @@ from config import *
 
 class MapApp(arcade.Window):
     def __init__(self):
-        super().__init__(WINDOW_WIDTH, WINDOW_HEIGHT, "Maps App - Версия 4")
+        super().__init__(WINDOW_WIDTH, WINDOW_HEIGHT, "Maps App - Версия 5")
         self.lon = DEFAULT_LON
         self.lat = DEFAULT_LAT
         self.spn = DEFAULT_SPN
         self.theme = "light"
+        self.marker = None
+        self.search_text = ""
+        self.search_input_active = False
         self.background = None
         self.get_image()
 
@@ -34,6 +37,20 @@ class MapApp(arcade.Window):
         arcade.draw_text("Стрелки - движение, T - тема",
                          10, 10, arcade.color.BLACK, 12)
 
+        arcade.draw_rect_filled(arcade.rect.XYWH(
+            90, 585, 180, 30), arcade.color.LIGHT_GRAY)
+
+        if len(self.search_text) > 18:
+            line1 = self.search_text[:18]
+            line2 = self.search_text[18:]
+            arcade.draw_rect_filled(arcade.rect.XYWH(
+                90, 585, 180, 60), arcade.color.LIGHT_GRAY)
+            arcade.draw_text(f">{line1}", 5, 580, arcade.color.BLACK, 12)
+            arcade.draw_text(f"{line2}", 5, 565, arcade.color.BLACK, 12)
+        else:
+            arcade.draw_text(f">{self.search_text}", 5,
+                             580, arcade.color.BLACK, 14)
+
     def get_image(self):
         self.spn = max(MIN_SPN, min(MAX_SPN, self.spn))
         params = {
@@ -44,6 +61,10 @@ class MapApp(arcade.Window):
             "theme": self.theme,
             "apikey": APIKEY
         }
+
+        if self.marker:
+            params["pt"] = f"{self.marker[0]},{self.marker[1]},pm2rdm"
+
         response = requests.get(
             "https://static-maps.yandex.ru/1.x/", params=params)
         if response.status_code != 200:
@@ -52,6 +73,40 @@ class MapApp(arcade.Window):
         with open(MAP_FILE, "wb") as f:
             f.write(response.content)
         self.background = arcade.load_texture(MAP_FILE)
+
+    def search(self):
+        if not self.search_text:
+            return
+
+        url = "https://geocode-maps.yandex.ru/1.x/"
+        params = {
+            "geocode": self.search_text,
+            "format": "json",
+            "apikey": APIKEY_GEO
+        }
+
+        try:
+            response = requests.get(url, params=params).json()
+
+            members = response['response']['GeoObjectCollection']['featureMember']
+            if not members:
+                print("Ничего не найдено")
+                return
+
+            obj = members[0]['GeoObject']
+
+            pos = obj['Point']['pos'].split()
+            self.lon = pos[0]
+            self.lat = pos[1]
+
+            self.marker = (self.lon, self.lat)
+
+            self.spn = 0.01
+
+            self.get_image()
+
+        except Exception as e:
+            print("Ошибка поиска:", e)
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.PAGEUP:
@@ -86,11 +141,30 @@ class MapApp(arcade.Window):
             self.get_image()
 
         if key == arcade.key.T:
-            if self.theme == "light":
-                self.theme = "dark"
-            else:
-                self.theme = "light"
+            if self.search_input_active:
+                return
+            self.theme = "dark" if self.theme == "light" else "light"
             self.get_image()
+
+        if key == arcade.key.ENTER:
+            if not self.search_input_active:
+                return
+            self.search()
+
+        if key == arcade.key.BACKSPACE:
+            if not self.search_input_active:
+                return
+            self.search_text = self.search_text[:-1]
+
+    def on_text(self, text):
+        if text and self.search_input_active:
+            self.search_text += text
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        if 0 <= x <= 180:
+            self.search_input_active = True
+        else:
+            self.search_input_active = False
 
 
 def main():
