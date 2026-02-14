@@ -6,10 +6,11 @@ from config import *
 
 class MapApp(arcade.Window):
     def __init__(self):
-        super().__init__(WINDOW_WIDTH, WINDOW_HEIGHT, "Maps App - Версия 3")
+        super().__init__(WINDOW_WIDTH, WINDOW_HEIGHT, "Maps App - Версия 4")
         self.lon = DEFAULT_LON
         self.lat = DEFAULT_LAT
         self.spn = DEFAULT_SPN
+        self.theme = "light"
         self.background = None
         self.get_image()
 
@@ -23,13 +24,15 @@ class MapApp(arcade.Window):
             )
 
         arcade.draw_text(f"Lon: {float(self.lon):.4f}",
-                         10, 90, arcade.color.BLACK, 14)
+                         10, 110, arcade.color.BLACK, 14)
         arcade.draw_text(f"Lat: {float(self.lat):.4f}",
-                         10, 70, arcade.color.BLACK, 14)
+                         10, 90, arcade.color.BLACK, 14)
         arcade.draw_text(f"SPN: {self.spn:.4f}", 10,
-                         50, arcade.color.BLACK, 14)
+                         70, arcade.color.BLACK, 14)
+        arcade.draw_text(f"Тема: {self.theme}", 10, 50, arcade.color.BLACK, 14)
         arcade.draw_text("PgUp/PgDown - зум", 10, 30, arcade.color.BLACK, 12)
-        arcade.draw_text("Стрелки - движение", 10, 10, arcade.color.BLACK, 12)
+        arcade.draw_text("Стрелки - движение, T - тема",
+                         10, 10, arcade.color.BLACK, 12)
 
     def get_image(self):
         self.spn = max(MIN_SPN, min(MAX_SPN, self.spn))
@@ -38,11 +41,13 @@ class MapApp(arcade.Window):
             "spn": f"{self.spn},{self.spn}",
             "size": "650,450",
             "l": "map",
+            "theme": self.theme,
             "apikey": APIKEY
         }
         response = requests.get(
             "https://static-maps.yandex.ru/1.x/", params=params)
         if response.status_code != 200:
+            print("Ошибка:", response.status_code)
             return
         with open(MAP_FILE, "wb") as f:
             f.write(response.content)
@@ -78,6 +83,13 @@ class MapApp(arcade.Window):
                 self.lon = str(new_lon)
             if MIN_LAT <= new_lat <= MAX_LAT:
                 self.lat = str(new_lat)
+            self.get_image()
+
+        if key == arcade.key.T:
+            if self.theme == "light":
+                self.theme = "dark"
+            else:
+                self.theme = "light"
             self.get_image()
 
 
